@@ -282,4 +282,6 @@ tags
 # Virtualenv
 # http://iamzed.com/2009/05/07/a-primer-on-virtualenv/
 
+*.bak
+
 # End of https://www.toptal.com/developers/gitignore/api/venv,virtualenv,vim,pycharm+all,linux,flask

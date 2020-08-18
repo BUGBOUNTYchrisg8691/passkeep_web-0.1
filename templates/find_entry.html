@@ -4,4 +4,32 @@
 
 {% block content %}
 
+<h2>Entry Search</h2>
+<div>
+    <table>
+        <tr>
+            <th align="left">Service:</th>
+            <th>
+                <form action="{{ url_for('find_entry') }}" method="post" autocomplete="off">
+                    <input type="text" name="service" placeholder="Service" id="service" required>
+                </form>
+            </th>
+        </tr>
+        <tr>
+            <td align="left">Username/Email:</td>
+            <td>{{ username }}</td>
+        </tr>
+        <tr>
+            <td align="left">Password:</td>
+            <td>{{ password }}</td>
+        </tr>
+        <tr>
+            <td align="left">
+                <div class="msg">{{ msg }}</div>
+            </td>
+            <td><input type="submit" value="Submit"></td>
+        </tr>
+    </table>
+</div>
+
 {% endblock %}

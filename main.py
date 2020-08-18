@@ -32,12 +32,15 @@ mysql = MySQL(app)
 @app.route('/passkeep_sql/', methods=['GET', 'POST'])
 def login():
     msg = ''
-    if request.method == 'POST' and 'username' in request.form and 'password' in request.form:
+    if request.method == 'POST' and 'username' in request.form \
+        and 'password' in request.form:
         username = request.form['username']
         password = request.form['password']
 
         cursor = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
-        cursor.execute('SELECT * FROM accounts WHERE username = %s AND password = %s;', (username, password,))
+        cursor.execute('''SELECT * FROM accounts
+                       WHERE username = %s AND password = %s;''',
+                       (username, password,))
 
         account = cursor.fetchone()
 
@@ -62,14 +65,16 @@ def logout():
 @app.route('/passkeep_sql/register', methods=['GET', 'POST'])
 def register():
     msg = ''
-    if request.method == 'POST' and 'username' in request.form and 'password' in request.form and \
+    if request.method == 'POST' and 'username' in request.form \
+        and 'password' in request.form and \
         'email' in request.form:
         username = request.form['username']
         password = request.form['password']
         email = request.form['email']
 
         cursor = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
-        cursor.execute('SELECT * FROM accounts WHERE username = %s;', (username,))
+        cursor.execute('SELECT * FROM accounts WHERE username = %s;',
+                       (username,))
         account = cursor.fetchone()
         if account:
             msg = 'Account already exists!'
@@ -80,7 +85,8 @@ def register():
         elif not username or not password or not email:
             msg = 'Please fill out the form!'
         else:
-            cursor.execute('INSERT INTO accounts VALUES (NULL, %s, %s, %s);', (username, password, email,))
+            cursor.execute('INSERT INTO accounts VALUES (NULL, %s, %s, %s);',
+                           (username, password, email,))
             mysql.connection.commit()
             msg = 'You have successfully registered!'
 
@@ -100,7 +106,8 @@ def home():
 def profile():
     if 'loggedin' in session:
         cursor = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
-        cursor.execute('SELECT * FROM accounts WHERE id = %s', (session['id'],))
+        cursor.execute('SELECT * FROM accounts WHERE id = %s',
+                       (session['id'],))
         account = cursor.fetchone()
 
         return render_template('profile.html', account=account)
@@ -112,17 +119,20 @@ def add_entry():
     msg = ''
     if 'loggedin' in session:
         cursor = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
-        cursor.execute('SELECT * FROM accounts WHERE id = %s', (session['id'],))
+        cursor.execute('SELECT * FROM accounts WHERE id = %s',
+                       (session['id'],))
         account = cursor.fetchone()
 
-        if request.method == 'POST' and 'service' in request.form and 'username' in request.form and \
+        if request.method == 'POST' and 'service' in request.form and \
+            'username' in request.form and \
             'password' in request.form:
             service = request.form['service']
             username = request.form['username']
             password = request.form['password']
 
             cursor = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
-            cursor.execute('SELECT id, service, username, password FROM entries WHERE account_id = %s;',
+            cursor.execute('''SELECT id, service, username, password
+                           FROM entries WHERE account_id = %s;''',
                            (account['id'],))
             entries = cursor.fetchall()
             for entry in entries:
@@ -131,8 +141,9 @@ def add_entry():
             if any(service in entry for entry in entries):
                 msg = 'Entry already exists!'
             else:
-                cursor.execute('INSERT INTO entries VALUES (NULL, %s, %s, %s, %s);', (account['id'], service, username,
-                                                                                      password,))
+                cursor.execute('''INSERT INTO entries
+                               VALUES (NULL, %s, %s, %s, %s);''',
+                               (account['id'], service, username, password,))
                 mysql.connection.commit()
                 msg = 'Your entry was successfully saved!'
 
@@ -141,12 +152,31 @@ def add_entry():
 
     return render_template('add_entry.html', msg=msg, account=account)
 
-@app.route('/passkeep_sql/find_entry')
+@app.route('/passkeep_sql/find_entry', methods=['GET', 'POST'])
 def find_entry():
     msg = ''
+    username = ''
+    password = ''
     if 'loggedin' in session:
         cursor = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
-        cursor.execute('SELECT * FROM accounts WHERE id = %s', (session['id'],))
+        cursor.execute('SELECT * FROM accounts WHERE id = %s',
+                       (session['id'],))
         account = cursor.fetchone()
 
-    return render_template('add_entry.html', msg=msg, account=account)
+        if request.method == 'POST' and 'service' in request.form:
+            service = request.form['service']
+
+            cursor = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
+            cursor.execute('SELECT service, username, password FROM entries WHERE account_id = %s AND service = %s',
+                           (account['id'], service,))
+            entry = cursor.fetchone()
+
+            if not entry:
+                msg = 'Entry does not exist'
+            else:
+                username = entry['username']
+                password = entry['password']
+
+
+    return render_template('find_entry.html', msg=msg, account=account, username=username,
+                           password=password)
