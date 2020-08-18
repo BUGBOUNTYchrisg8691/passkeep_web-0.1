@@ -1,0 +1,44 @@
+{% extends 'layout.html' %}
+
+{% block title %}Home{% endblock %}
+
+{% block content %}
+
+<div class="add_entry">
+    <form action="{{ url_for('add_entry') }}" method="post" autocomplete="off">
+        <table style="width:100%">
+            <tr>
+                <label for="service">
+                    <i class="fas fa-service"></i>
+                </label>
+            </tr>
+            <tr>
+                <input type="text" name="service" placeholder="Service" id="service" required>
+            </tr>
+            <tr>
+                <label for="username">
+                    <i class="fas fa-user"></i>
+                </label>
+            </tr>
+            <tr>
+                <input type="text" name="username" placeholder="Username/Email" id="username" required>
+            </tr>
+            <tr>
+                <label for="password">
+                    <i class="fas fa-lock"></i>
+                </label>
+            </tr>
+            <tr>
+                <input type="password" name="password" placeholder="Password" id="password" required>
+            </tr>
+            <tr>
+                <div class="msg">{{ msg }}</div>
+            </tr>
+            <tr>
+                <input type="submit" value="Submit">
+            </tr>
+        </table>
+    </form>
+</div>
+
+{% endblock %}
