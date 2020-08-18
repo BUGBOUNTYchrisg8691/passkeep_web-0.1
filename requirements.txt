@@ -1,0 +1,17 @@
+bcrypt==3.2.0
+cffi==1.14.2
+click==7.1.2
+cryptography==3.0
+Flask==1.1.2
+Flask-MySQLdb==0.2.0
+greenlet==0.4.16
+itsdangerous==1.1.0
+Jinja2==2.11.2
+MarkupSafe==1.1.1
+msgpack==1.0.0
+mysqlclient==2.0.1
+neovim==0.3.1
+pycparser==2.20
+pynvim==0.4.1
+six==1.15.0
+Werkzeug==1.0.1

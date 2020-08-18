@@ -8,6 +8,7 @@ from flask_mysqldb import MySQL
 import MySQLdb.cursors
 import re
 import os
+import hashlib
 
 
 app = Flask(__name__)
@@ -29,7 +30,7 @@ app.config['MYSQL_DB'] = os.environ.get('SQL_DB')
 
 mysql = MySQL(app)
 
-@app.route('/passkeep_sql/', methods=['GET', 'POST'])
+@app.route('/passkeep_web/', methods=['GET', 'POST'])
 def login():
     msg = ''
     if request.method == 'POST' and 'username' in request.form \
@@ -39,12 +40,29 @@ def login():
 
         cursor = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
         cursor.execute('''SELECT * FROM accounts
-                       WHERE username = %s AND password = %s;''',
-                       (username, password,))
+                       WHERE username = %s;''',
+                       (username,))
 
         account = cursor.fetchone()
+        check = False
+        passwd_entry_to_bytes = bytes.fromhex(account['password'])
+        stored_salt = passwd_entry_to_bytes[:32]
+        stored_key = passwd_entry_to_bytes[32:]
 
-        if account:
+        try:
+            key_attempt = hashlib.pbkdf2_hmac('sha256', password.encode('utf-8'), stored_salt, 100000)
+        except TypeError as te:
+            msg = 'Incorrect username/password'
+            return render_template('index.html', msg=msg)
+
+        try:
+            assert key_attempt == stored_key
+            check = True
+        except AssertionError as ae:
+            msg = key_stored
+            return render_template('index.html', msg=msg)
+
+        if check:
             session['loggedin'] = True
             session['id'] = account['id']
             session['username'] = account['username']
@@ -52,9 +70,9 @@ def login():
         else:
             msg = 'Incorrect username/password'
 
-    return render_template('index.html', msg='')
+    return render_template('index.html', msg=msg)
 
-@app.route('/passkeep_sql/logout')
+@app.route('/passkeep_web/logout')
 def logout():
     session.pop('loggedin', None)
     session.pop('id', None)
@@ -62,15 +80,18 @@ def logout():
 
     return redirect(url_for('login'))
 
-@app.route('/passkeep_sql/register', methods=['GET', 'POST'])
+@app.route('/passkeep_web/register', methods=['GET', 'POST'])
 def register():
     msg = ''
     if request.method == 'POST' and 'username' in request.form \
         and 'password' in request.form and \
         'email' in request.form:
         username = request.form['username']
-        password = request.form['password']
+        prepass = request.form['password']
         email = request.form['email']
+        salt = os.urandom(32)
+        key = hashlib.pbkdf2_hmac('sha256', prepass.encode('utf-8'), salt, 100000)
+        password = salt + key
 
         cursor = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
         cursor.execute('SELECT * FROM accounts WHERE username = %s;',
@@ -85,8 +106,9 @@ def register():
         elif not username or not password or not email:
             msg = 'Please fill out the form!'
         else:
-            cursor.execute('INSERT INTO accounts VALUES (NULL, %s, %s, %s);',
-                           (username, password, email,))
+            cursor.execute('''INSERT INTO accounts (username, password, email)
+                           VALUES (%s, %s, %s);''',
+                           (username, password.hex(), email,))
             mysql.connection.commit()
             msg = 'You have successfully registered!'
 
@@ -95,14 +117,14 @@ def register():
 
     return render_template('register.html', msg=msg)
 
-@app.route('/passkeep_sql/home')
+@app.route('/passkeep_web/home')
 def home():
     if 'loggedin' in session:
         return render_template('home.html', username=session['username'])
 
     return redirect(url_for('login'))
 
-@app.route('/passkeep_sql/profile')
+@app.route('/passkeep_web/profile')
 def profile():
     if 'loggedin' in session:
         cursor = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
@@ -114,7 +136,7 @@ def profile():
 
     return redirect(url_for('login'))
 
-@app.route('/passkeep_sql/add_entry', methods=['GET', 'POST'])
+@app.route('/passkeep_web/add_entry', methods=['GET', 'POST'])
 def add_entry():
     msg = ''
     if 'loggedin' in session:
@@ -152,7 +174,7 @@ def add_entry():
 
     return render_template('add_entry.html', msg=msg, account=account)
 
-@app.route('/passkeep_sql/find_entry', methods=['GET', 'POST'])
+@app.route('/passkeep_web/find_entry', methods=['GET', 'POST'])
 def find_entry():
     msg = ''
     username = ''
