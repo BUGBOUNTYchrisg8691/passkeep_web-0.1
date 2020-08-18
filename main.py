@@ -99,22 +99,22 @@ def register():
                        (username,))
         account = cursor.fetchone()
         if account:
-            msg = 'Account already exists!'
+            msg = 'Account already exists'
         elif not re.match(r'[^@]+@[^@]+\.[^@]+', email):
-            msg = 'Invalid email address!'
+            msg = 'Invalid email address'
         elif not re.match(r'[A-Za-z0-9]+', username):
-            msg = 'Username must contain only alphanumeric characters!'
+            msg = 'Username must contain only alphanumeric characters'
         elif not username or not password or not email:
-            msg = 'Please fill out the form!'
+            msg = 'Please fill out the form'
         else:
             cursor.execute('''INSERT INTO accounts (username, password, email)
                            VALUES (%s, %s, %s);''',
                            (username, password.hex(), email,))
             mysql.connection.commit()
-            msg = 'You have successfully registered!'
+            msg = 'You have successfully registered'
 
     elif request.method == 'POST':
-        msg = 'Please fill out the form!'
+        msg = 'Please fill out the form'
 
     return render_template('register.html', msg=msg)
 
@@ -151,24 +151,33 @@ def add_entry():
             'password' in request.form:
             service = request.form['service']
             username = request.form['username']
-            password = request.form['password']
+            prepass = request.form['password']
 
             cursor = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
             cursor.execute('''SELECT * FROM entries WHERE account_id = %s;''',
                            (account['id'],))
             entries = cursor.fetchall()
 
-            if any(service in entry for entry in entries):
+            salt = os.urandom(32)
+            key = encrypt(prepass, account['password'][32:], salt)
+            password = salt.hex() + key
+
+            if service in (item for entry in entries for item in entry):
                 msg = 'Entry already exists!'
+            elif not re.match(r'[^@]+@[^@]+\.[^@]+', username) and not \
+                re.match(r'[A-Za-z0-9]+', username):
+                msg = 'Invalid username/email'
+            elif not service or not username or not password:
+                msg = 'Please fill out the form'
             else:
                 cursor.execute('''INSERT INTO entries (account_id, service, username, password)
                                VALUES (%s, %s, %s, %s);''',
                                (account['id'], service, username, password,))
                 mysql.connection.commit()
-                msg = 'Your entry was successfully saved!'
+                msg = 'Your entry was successfully saved'
 
         elif request.method == 'POST':
-            msg = 'Please fill out the form!'
+            msg = 'Please fill out the form'
 
     return render_template('add_entry.html', msg=msg, account=account)
 
@@ -195,7 +204,11 @@ def find_entry():
                 msg = 'Entry does not exist'
             else:
                 username = entry['username']
-                password = entry['password']
+                prepass = entry['password']
+                mast_pass = account['password'][32:]
+                key = prepass[64:]
+                salt = bytes.fromhex(prepass[:64])
+                password = decrypt(key, mast_pass, salt)
 
 
     return render_template('find_entry.html', msg=msg, account=account, username=username,
