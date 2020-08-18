@@ -27,8 +27,11 @@ CREATE TABLE IF NOT EXISTS `entries` (
     FOREIGN KEY (`account_id`) REFERENCES `accounts` (`id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8;
 
+
 Then in console navigate to project directory,
-if on linux, run:
+pip install -r requirement.txt
+
+then, if on linux, run:
 export FLASK_APP=main.py
 export FLASK_DEBUG=1
 flask run
