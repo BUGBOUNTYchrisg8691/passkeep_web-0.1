@@ -9,6 +9,7 @@ import MySQLdb.cursors
 import re
 import os
 import hashlib
+from package.controllers.encryption import encrypt, decrypt
 
 
 app = Flask(__name__)
@@ -153,18 +154,15 @@ def add_entry():
             password = request.form['password']
 
             cursor = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
-            cursor.execute('''SELECT id, service, username, password
-                           FROM entries WHERE account_id = %s;''',
+            cursor.execute('''SELECT * FROM entries WHERE account_id = %s;''',
                            (account['id'],))
             entries = cursor.fetchall()
-            for entry in entries:
-                print(entry)
 
             if any(service in entry for entry in entries):
                 msg = 'Entry already exists!'
             else:
-                cursor.execute('''INSERT INTO entries
-                               VALUES (NULL, %s, %s, %s, %s);''',
+                cursor.execute('''INSERT INTO entries (account_id, service, username, password)
+                               VALUES (%s, %s, %s, %s);''',
                                (account['id'], service, username, password,))
                 mysql.connection.commit()
                 msg = 'Your entry was successfully saved!'
