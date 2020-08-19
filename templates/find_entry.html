@@ -8,12 +8,12 @@
 <div>
     <table>
         <tr>
-            <th align="left">Service:</th>
-            <th>
-                <form action="{{ url_for('find_entry') }}" method="post" autocomplete="off">
+            <td align="left">Service:</td>
+            <td>
+                <form action="{{ url_for('find_entry') }}" method="post" autocomplete="off" id="serviceForm">
                     <input type="text" name="service" placeholder="Service" id="service" required>
                 </form>
-            </th>
+            </td>
         </tr>
         <tr>
             <td align="left">Username/Email:</td>
@@ -27,9 +27,10 @@
             <td align="left">
                 <div class="msg">{{ msg }}</div>
             </td>
-            <td><input type="Submit" value="Submit"></td>
+            <td><input onclick="submit()" type="submit" value="Submit" id="submitBtn"></td>
         </tr>
     </table>
 </div>
+<script src="{{ url_for('static', filename='scripts.js') }}"></script>
 
 {% endblock %}
